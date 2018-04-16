@@ -11,12 +11,20 @@ from sklearn.decomposition import PCA
 # Folder that contains data
 data_folder = 'Data/'
 output_folder = 'Features/'
+# output_folder = 'Test/'
 
 # Dataframe labels to column names
 x = 1
 y = 2
 z = 3
 label = 4
+
+'''
+1 - Working at computer
+2 - Climbing or coming down the stairs
+3 - Standing
+4 - Walking
+'''
 
 # Frequency of the sensor in use
 sensor_frequency = 52
@@ -159,7 +167,18 @@ def write_features_to_file(f, vector):
     f.write("\n")
 
 
+def aggregate_labels(curr_label):
+    if curr_label == 5:
+        curr_label = 2
+    if curr_label == 7:
+        curr_label = 3
+    if curr_label == 6:
+        curr_label = 4
+    return curr_label
+
+
 def get_window_label(df):
+    df[label] = df[label].apply(aggregate_labels)
     return df[label].value_counts().idxmax()
 
 
@@ -234,7 +253,7 @@ def extract_features(df, initial_velocity, filename):
     return ans, initial_velocity
 
 
-if __name__ == "__main__":
+def extract_feature_main():
     feature_list = get_feature_list()
     feature_list.append('label')
     # print(len(feature_list))
@@ -245,11 +264,12 @@ if __name__ == "__main__":
         for file in files:
             # check if its a csv file
             if '.csv' in file:
-                output_file = output_folder + file[:-4] + "_ws_" + str(window_size) + "_opc_" + str(overlap_pc) + ".features" + ".csv"
+                output_file = output_folder + file[:-4] + "_ws_" + str(window_size) + "_opc_" + str(
+                    overlap_pc) + ".features" + ".csv"
                 with open(output_file, "w+") as f:
                     f.write(",".join(feature_list))
                     f.write("\n")
-                    index = 0   # Tracking the index inside the file to load the window into the dataframe.
+                    index = 0  # Tracking the index inside the file to load the window into the dataframe.
                     initial_velocity = 0
                     print("Reading from file", file)
                     while True:
@@ -264,10 +284,11 @@ if __name__ == "__main__":
                         curr_label = get_window_label(df_current_window)
                         feature_vector = np.append(feature_vector, curr_label)
                         write_features_to_file(f, feature_vector)
+                        # break
                 f.close()
+            # break
+        # break
 
 
-
-
-
-
+if __name__ == "__main__":
+    extract_feature_main()
