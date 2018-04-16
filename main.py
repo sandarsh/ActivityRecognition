@@ -10,11 +10,13 @@ from sklearn.decomposition import PCA
 
 # Folder that contains data
 data_folder = 'Data/'
+output_folder = 'Features/'
 
 # Dataframe labels to column names
 x = 1
 y = 2
 z = 3
+label = 4
 
 # Frequency of the sensor in use
 sensor_frequency = 52
@@ -26,7 +28,7 @@ cut_off_for_low_pass = 6
 nyqHZ = sensor_frequency/2
 
 # Number of seconds to use as window
-window_size = 1
+window_size = 3
 
 # window overlap percentage
 overlap_pc = 10
@@ -133,11 +135,35 @@ def entropy(df, relevant_features):
         curr_ent = stats.entropy(p_data, qk=None, base=None)
         ans_arr = np.append(ans_arr, curr_ent)
         # print(curr_ent)
-    print(ans_arr)
+    # print(ans_arr)
     return ans_arr
 
 
-def extract_features(df, initial_velocity):
+def get_feature_list():
+    relevant_features = ['lax', 'lay', 'laz',
+                         'hax', 'hay', 'haz',
+                         'lmag', 'hmag',
+                         'lpc1', 'lpc2', 'lpc3',
+                         'hpc1', 'hpc2', 'hpc3']
+
+    feature_name = ['zc', 'p2p', 'rms', 'kurt', 'skew', 'cf', 'vrms', 'ent']
+    feature_list = []
+    for ftr in feature_name:
+        for n in relevant_features:
+            feature_list.append(n + "." + ftr)
+    return feature_list
+
+
+def write_features_to_file(f, vector):
+    f.write(",".join(map(str,vector)))
+    f.write("\n")
+
+
+def get_window_label(df):
+    return df[label].value_counts().idxmax()
+
+
+def extract_features(df, initial_velocity, filename):
     features = [x, y, z]
 
     # -------------------------------------------------------------------
@@ -181,7 +207,6 @@ def extract_features(df, initial_velocity):
     # --------------------------------------------------------------------
     # Center the columns
     # --------------------------------------------------------------------
-    labels = df[4]
     df = df.drop([4], axis=1)  # Drop the label column. Labels stored in 'labels' variable.
     df = df - df.mean()
     # --------------------------------------------------------------------
@@ -191,7 +216,7 @@ def extract_features(df, initial_velocity):
                          'lpc1', 'lpc2', 'lpc3',
                          'hpc1', 'hpc2', 'hpc3']
 
-    feature_name = ['zc', 'p2p', 'rms', 'kurt', 'skew', 'cf', 'vrms', 'ent']
+    # feature_name = ['zc', 'p2p', 'rms', 'kurt', 'skew', 'cf', 'vrms', 'ent']
     zc_arr = zero_crossings(df, relevant_features)
     p2p_arr = p2p_val(df, relevant_features)
     rms_arr = rms(df, relevant_features)
@@ -200,40 +225,46 @@ def extract_features(df, initial_velocity):
     cf_arr = crest_factor(df, relevant_features, rms_arr)
     vrms_arr, initial_velocity = vrms(df, relevant_features, initial_velocity)
     ent_arr = entropy(df, relevant_features)
-
-
+    ans = np.append(zc_arr,[p2p_arr,rms_arr,kurt_arr,skew_arr,cf_arr,vrms_arr,ent_arr])
+    # print(len(ans),ans)
     # Printing and plotting code
     # print(df)
     # df.plot(y=['pc1', 'lpc1'])
     # pl.show()
-    return np.array([]), initial_velocity
-
+    return ans, initial_velocity
 
 
 if __name__ == "__main__":
+    feature_list = get_feature_list()
+    feature_list.append('label')
+    # print(len(feature_list))
+
     # Traversing the data directory
     for dir, file, files in os.walk(data_folder):
         # Traversing each file
         for file in files:
             # check if its a csv file
             if '.csv' in file:
-                index = 0   #Tracking the index inside the file to load the window into the dataframe.
-                initial_velocity = 0
-                print("Reading from file", file)
-                while True:
-                    df_current_window = get_current_window(index, file)
-                    rows = df_current_window.shape[0]
-                    cols = df_current_window.shape[1]
-                    if rows < number_of_samples:
-                        print(rows)
-                        break
-                    index += int((number_of_samples - ((overlap_pc / 100) * number_of_samples)))
-                    # write code to extract features here
-                    # print(df_current_window)
-                    feature_vector, initial_velocity = extract_features(df_current_window, initial_velocity)
-
-                    break
-            break
+                output_file = output_folder + file[:-4] + "_ws_" + str(window_size) + "_opc_" + str(overlap_pc) + ".features" + ".csv"
+                with open(output_file, "w+") as f:
+                    f.write(",".join(feature_list))
+                    f.write("\n")
+                    index = 0   # Tracking the index inside the file to load the window into the dataframe.
+                    initial_velocity = 0
+                    print("Reading from file", file)
+                    while True:
+                        df_current_window = get_current_window(index, file)
+                        rows = df_current_window.shape[0]
+                        cols = df_current_window.shape[1]
+                        if rows < number_of_samples:
+                            # print(rows)
+                            break
+                        index += int((number_of_samples - ((overlap_pc / 100) * number_of_samples)))
+                        feature_vector, initial_velocity = extract_features(df_current_window, initial_velocity, file)
+                        curr_label = get_window_label(df_current_window)
+                        feature_vector = np.append(feature_vector, curr_label)
+                        write_features_to_file(f, feature_vector)
+                f.close()
 
 
 
