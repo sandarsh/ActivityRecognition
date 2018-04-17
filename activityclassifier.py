@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 
-input_folder = 'Features/'
+input_folder = 'Features_1p5sec/'
 
 
 
