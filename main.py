@@ -10,7 +10,7 @@ from sklearn.decomposition import PCA
 
 # Folder that contains data
 data_folder = 'Data/'
-output_folder = 'Features/'
+output_folder = 'Features_2sec/'
 # output_folder = 'Test/'
 
 # Dataframe labels to column names
@@ -20,6 +20,7 @@ z = 3
 label = 4
 
 '''
+0 - Unclassified
 1 - Working at computer
 2 - Climbing or coming down the stairs
 3 - Standing
@@ -36,7 +37,7 @@ cut_off_for_low_pass = 6
 nyqHZ = sensor_frequency/2
 
 # Number of seconds to use as window
-window_size = 3
+window_size = 2
 
 # window overlap percentage
 overlap_pc = 10
