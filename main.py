@@ -10,7 +10,7 @@ from sklearn.decomposition import PCA
 
 # Folder that contains data
 data_folder = 'Data/'
-output_folder = 'Features_1p5sec/'
+output_folder = 'Features_10sec/'
 # output_folder = 'Test/'
 
 # Dataframe labels to column names
@@ -37,7 +37,7 @@ cut_off_for_low_pass = 6
 nyqHZ = sensor_frequency/2
 
 # Number of seconds to use as window
-window_size = 1.5
+window_size = 10
 
 # window overlap percentage
 overlap_pc = 10
